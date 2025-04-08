@@ -18,12 +18,7 @@ SOURCES += \
     src/BolusManager.cpp \
     src/Cartridge.cpp \
     src/Battery.cpp \
-    ui/MainWindow.cpp \
-    ui/OptionsWindow.cpp \
-    ui/PersonalProfilesWindow.cpp \
-    ui/AddProfileWindow.cpp \
-    ui/ViewProfileWindow.cpp \
-    ui/BolusInputPage.cpp
+    ui/MergedMainWindow.cpp 
 
 # Header files
 HEADERS += \
@@ -38,13 +33,11 @@ HEADERS += \
     include/BolusManager.h \
     include/Cartridge.h \
     include/Battery.h \
-    ui/MainWindow.h \
-    ui/OptionsWindow.h \
-    ui/PersonalProfilesWindow.h \
-    ui/AddProfileWindow.h \
-    ui/ViewProfileWindow.h \
-    ui/BolusInputPage.h
+    ui/MergedMainWindow.h 
 
 # Include paths
 INCLUDEPATH += include \
                ui
+
+FORMS += \
+    untitled/BolusInputPage.ui
