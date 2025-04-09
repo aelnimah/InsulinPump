@@ -6,25 +6,33 @@ TARGET   = InsulinSimulator
 
 # Source files
 SOURCES += \
-    main.cpp \
+    src/main.cpp \
     src/PumpSimulator.cpp \
+    src/DataLogger.cpp \
+    src/Alarm.cpp \
+    src/ControlIQController.cpp \
+    src/AlertManager.cpp \
     src/BasalSegment.cpp \
     src/Profile.cpp \
     src/ProfileManager.cpp \
+    src/CGMSensorInterface.cpp \
     src/ProfileCRUDController.cpp \
     src/BolusCalculator.cpp \
     src/InsulinDeliveryManager.cpp \
-    src/CGMSensorInterface.cpp \
     src/BolusManager.cpp \
     src/Cartridge.cpp \
     src/Battery.cpp \
-    ui/MergedMainWindow.cpp 
+    src/MergedMainWindow.cpp
 
 # Header files
 HEADERS += \
+    include/Alarm.h \
+    include/AlertManager.h \
+    include/DataLogger.h \
     include/PumpSimulator.h \
     include/BasalSegment.h \
     include/Profile.h \
+    include/ControlIQController.h \
     include/ProfileManager.h \
     include/ProfileCRUDController.h \
     include/BolusCalculator.h \
@@ -33,11 +41,8 @@ HEADERS += \
     include/BolusManager.h \
     include/Cartridge.h \
     include/Battery.h \
-    ui/MergedMainWindow.h 
+    include/MergedMainWindow.h
 
 # Include paths
 INCLUDEPATH += include \
                ui
-
-FORMS += \
-    untitled/BolusInputPage.ui

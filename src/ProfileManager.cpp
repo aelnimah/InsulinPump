@@ -3,18 +3,14 @@
 #include <iostream>
 #include <algorithm>
 
-// Constructor: Start with no active profile
 ProfileManager::ProfileManager() : activeProfile(nullptr) {}
 
-// Destructor: Delete all stored profiles
 ProfileManager::~ProfileManager() {
-    for (auto profile : profiles) {
+    for (auto profile : profiles)
         delete profile;
-    }
     profiles.clear();
 }
 
-// Create a new profile if valid
 void ProfileManager::createProfile(Profile* newProfile) {
     if (newProfile && newProfile->isValid()) {
         profiles.push_back(newProfile);
@@ -24,21 +20,17 @@ void ProfileManager::createProfile(Profile* newProfile) {
     }
 }
 
-// Return profile with matching name
 Profile* ProfileManager::getProfileByName(const std::string& name) {
-    for (auto* profile : profiles) {
-        if (profile->getName() == name) {
+    for (auto* profile : profiles)
+        if (profile->getName() == name)
             return profile;
-        }
-    }
     return nullptr;
 }
 
-// Update existing profile with new data
 void ProfileManager::updateProfile(Profile* updatedProfile) {
     for (size_t i = 0; i < profiles.size(); ++i) {
         if (profiles[i]->getName() == updatedProfile->getName()) {
-            delete profiles[i];  // Clean up old data
+            delete profiles[i];
             profiles[i] = updatedProfile;
             std::cout << "Profile '" << updatedProfile->getName() << "' updated.\n";
             return;
@@ -47,14 +39,11 @@ void ProfileManager::updateProfile(Profile* updatedProfile) {
     std::cout << "Profile not found for update.\n";
 }
 
-// Delete profile with given name
 void ProfileManager::deleteProfile(const std::string& name) {
     auto it = std::remove_if(profiles.begin(), profiles.end(), [&](Profile* p) {
         if (p->getName() == name) {
-            // Reset active profile if neccesary
-            if (activeProfile == p) {
+            if (activeProfile == p)
                 activeProfile = nullptr;
-            }
             delete p;
             std::cout << "Profile '" << name << "' deleted.\n";
             return true;
@@ -64,12 +53,7 @@ void ProfileManager::deleteProfile(const std::string& name) {
     profiles.erase(it, profiles.end());
 }
 
-// Return active profile
-Profile* ProfileManager::getActiveProfile() const {
-    return activeProfile;
-}
-
-// Set active profile if exists
+Profile* ProfileManager::getActiveProfile() const { return activeProfile; }
 void ProfileManager::setActiveProfile(const std::string& profileName) {
     Profile* found = getProfileByName(profileName);
     if (found) {
@@ -79,8 +63,4 @@ void ProfileManager::setActiveProfile(const std::string& profileName) {
         std::cout << "Profile not found.\n";
     }
 }
-
-// Return list of all profiles
-std::vector<Profile*> ProfileManager::getAllProfiles() const {
-    return profiles;
-}
+std::vector<Profile*> ProfileManager::getAllProfiles() const { return profiles; }

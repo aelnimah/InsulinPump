@@ -11,16 +11,13 @@ InsulinDeliveryManager::InsulinDeliveryManager()
       previousBasalRate(0.0),
       bolusCalculator(nullptr),
       battery(nullptr),
-      cartridge(nullptr)
-{
-}
+      cartridge(nullptr) {}
 
 InsulinDeliveryManager::~InsulinDeliveryManager() {
-    // Cleanup if needed.
+    // Additional cleanup if required.
 }
 
 void InsulinDeliveryManager::deliverBolus(double amount, bool extended, double duration) {
-    // Immediate bolus overload (3 arguments)
     if (!cartridge) {
         std::cout << "[InsulinDeliveryManager] [Error] No cartridge present.\n";
         return;
@@ -37,16 +34,12 @@ void InsulinDeliveryManager::deliverBolus(double amount, bool extended, double d
         insulinOnBoard -= amount;
         std::cout << "[InsulinDeliveryManager] Delivered immediate bolus of " << amount << " units.\n";
     } else {
-        // If extended flag is true but detailed parameters not provided,
-        // we can print an error or fallback.
         std::cout << "[InsulinDeliveryManager] [Error] Extended bolus parameters not provided.\n";
     }
 }
 
 void InsulinDeliveryManager::deliverBolus(double totalDose, bool extended, double immediateAmount, double duration, int splits) {
-    // Extended bolus overload (5 arguments)
     if (!extended) {
-        // Fallback to immediate delivery.
         deliverBolus(totalDose, false, 0.0);
         return;
     }
@@ -62,50 +55,41 @@ void InsulinDeliveryManager::deliverBolus(double totalDose, bool extended, doubl
         std::cout << "[InsulinDeliveryManager] [Error] Number of splits must be positive.\n";
         return;
     }
-    // Deliver the immediate portion.
     if (!cartridge->useInsulin(immediateAmount)) {
         std::cout << "[InsulinDeliveryManager] [Error] Cartridge usage failed for immediate portion.\n";
         return;
     }
     insulinOnBoard -= immediateAmount;
-    std::cout << "[InsulinDeliveryManager] Delivered immediate portion of " 
-              << immediateAmount << " units." << std::endl;
-    
-    // Calculate remaining dose.
+    std::cout << "[InsulinDeliveryManager] Delivered immediate portion of " << immediateAmount << " units.\n";
+
     double remainingDose = totalDose - immediateAmount;
     double perSplitDose = remainingDose / splits;
     double interval = duration / splits; // in minutes
-
-    std::cout << "[InsulinDeliveryManager] Scheduling extended bolus: " 
-              << remainingDose << " units, divided into " 
-              << splits << " splits (" << perSplitDose 
-              << " units every " << interval << " minutes)." << std::endl;
-
-    // Schedule the extended doses.
+    std::cout << "[InsulinDeliveryManager] Scheduling extended bolus: " << remainingDose
+              << " units in " << splits << " splits (" << perSplitDose
+              << " units every " << interval << " minutes).\n";
     for (int i = 1; i <= splits; i++) {
         ExtendedDoseEvent event;
         event.dose = perSplitDose;
-        event.scheduledTime = i * interval;  // i-th split delivered at i*interval minutes.
+        event.scheduledTime = i * interval;
         extendedSchedule.push_back(event);
     }
 }
 
 void InsulinDeliveryManager::processScheduledExtendedDoses(double currentSimTime) {
-    // Process and deliver scheduled extended doses if due.
     for (auto it = extendedSchedule.begin(); it != extendedSchedule.end(); ) {
         if (currentSimTime >= it->scheduledTime) {
             if (!cartridge) {
-                std::cout << "[InsulinDeliveryManager] [Error] No cartridge present during scheduled delivery.\n";
+                std::cout << "[InsulinDeliveryManager] [Error] No cartridge during scheduled delivery.\n";
                 it = extendedSchedule.erase(it);
                 continue;
             }
             if (cartridge->useInsulin(it->dose)) {
                 insulinOnBoard += it->dose;
-                std::cout << "[InsulinDeliveryManager] Delivered scheduled extended dose of " 
-                          << it->dose << " units at simulated time " 
-                          << currentSimTime << " minutes.\n";
+                std::cout << "[InsulinDeliveryManager] Delivered scheduled extended dose of "
+                          << it->dose << " units at time " << currentSimTime << " minutes.\n";
             } else {
-                std::cout << "[InsulinDeliveryManager] [Error] Cartridge usage failed for scheduled extended dose.\n";
+                std::cout << "[InsulinDeliveryManager] [Error] Cartridge usage failed for scheduled dose.\n";
             }
             it = extendedSchedule.erase(it);
         } else {
@@ -114,18 +98,17 @@ void InsulinDeliveryManager::processScheduledExtendedDoses(double currentSimTime
     }
 }
 
-
 void InsulinDeliveryManager::startBasalDelivery(double rate) {
     if (!battery) {
-        std::cout << "[InsulinDeliveryManager] [Error] No battery present. Cannot start basal.\n";
+        std::cout << "[InsulinDeliveryManager] [Error] No battery present.\n";
         return;
     }
     if (battery->getLevel() < 20) {
-        std::cout << "[InsulinDeliveryManager] [Error] Battery level is low (" << battery->getLevel() << "%). Cannot start basal.\n";
+        std::cout << "[InsulinDeliveryManager] [Error] Battery level is low (" << battery->getLevel() << "%).\n";
         return;
     }
     if (!cartridge) {
-        std::cout << "[InsulinDeliveryManager] [Error] No cartridge present. Cannot start basal.\n";
+        std::cout << "[InsulinDeliveryManager] [Error] No cartridge present.\n";
         return;
     }
     std::cout << "[InsulinDeliveryManager] Cartridge volume: " << cartridge->getCurrentVolume() << " units.\n";
@@ -138,7 +121,7 @@ void InsulinDeliveryManager::startBasalDelivery(double rate) {
         return;
     }
     if (basalRunning) {
-        std::cout << "[InsulinDeliveryManager] [Warning] Basal is already running at " << currentBasalRate << " U/hr. Updating to " << rate << " U/hr.\n";
+        std::cout << "[InsulinDeliveryManager] [Warning] Basal already running at " << currentBasalRate << " U/hr. Updating.\n";
     }
     currentBasalRate = rate;
     basalRunning = true;
@@ -152,23 +135,15 @@ void InsulinDeliveryManager::stopBasalDelivery() {
 
 void InsulinDeliveryManager::resumeBasalDelivery() {
     if (basalRunning) {
-        std::cout << "[InsulinDeliveryManager] [Warning] Basal is already running. Cannot resume.\n";
+        std::cout << "[InsulinDeliveryManager] [Warning] Basal already running. Cannot resume.\n";
         return;
     }
     if (currentBasalRate <= 0.0) {
-        std::cout << "[InsulinDeliveryManager] [Error] No previous basal rate stored. Cannot resume basal.\n";
+        std::cout << "[InsulinDeliveryManager] [Error] No previous basal rate stored.\n";
         return;
     }
-    if (!battery) {
-        std::cout << "[InsulinDeliveryManager] [Error] No battery present. Cannot resume basal.\n";
-        return;
-    }
-    if (!cartridge) {
-        std::cout << "[InsulinDeliveryManager] [Error] No cartridge present. Cannot resume basal.\n";
-        return;
-    }
-    if (cartridge->getCurrentVolume() < 1.0) {
-        std::cout << "[InsulinDeliveryManager] [Error] Cartridge nearly empty. Basal not resumed.\n";
+    if (!battery || !cartridge || cartridge->getCurrentVolume() < 1.0) {
+        std::cout << "[InsulinDeliveryManager] [Error] Cannot resume basal due to hardware issues.\n";
         return;
     }
     basalRunning = true;
@@ -176,30 +151,23 @@ void InsulinDeliveryManager::resumeBasalDelivery() {
 }
 
 void InsulinDeliveryManager::updateIOB(double elapsedTime) {
-    double decayRate = 0.5; // 0.5 units/hr decay (placeholder)
+    double decayRate = 0.5;  // units per hour decay (placeholder)
     double reduceAmount = decayRate * elapsedTime;
-    if (reduceAmount > insulinOnBoard) {
+    if (reduceAmount > insulinOnBoard)
         insulinOnBoard = 0.0;
-    } else {
+    else
         insulinOnBoard -= reduceAmount;
-    }
 }
 
 bool InsulinDeliveryManager::hasSufficientInsulin(double requiredUnits) {
-    if (!cartridge) return false;
-    return (cartridge->getCurrentVolume() >= requiredUnits);
+    return cartridge && (cartridge->getCurrentVolume() >= requiredUnits);
 }
 
 void InsulinDeliveryManager::onTick(double elapsedTime) {
     if (basalRunning) {
         double insulinRequired = currentBasalRate * (elapsedTime / 60.0);
         double availableInsulin = cartridge->getCurrentVolume();
-        double insulinToDeliver = insulinRequired;
-        if (availableInsulin < insulinRequired) {
-            std::cout << "[InsulinDeliveryManager] [Warning] Insufficient insulin for full basal rate. Delivering partial dose: "
-                      << availableInsulin << " units instead of " << insulinRequired << " units.\n";
-            insulinToDeliver = availableInsulin;
-        }
+        double insulinToDeliver = (availableInsulin < insulinRequired) ? availableInsulin : insulinRequired;
         if (cartridge->useInsulin(insulinToDeliver)) {
             insulinOnBoard += insulinToDeliver;
             std::cout << "[InsulinDeliveryManager] Delivered basal dose of " << insulinToDeliver << " units.\n";
