@@ -1,13 +1,10 @@
 #include "BasalSegment.h"
 
-// Default constructor.
 BasalSegment::BasalSegment() : startTime(0.0), endTime(0.0), unitsPerHour(0.0) {}
 
-// Parameterized constructor.
 BasalSegment::BasalSegment(double start, double end, double units)
     : startTime(start), endTime(end), unitsPerHour(units) {}
 
-// Return true if the provided hour is within [startTime, endTime).
 bool BasalSegment::timeInSegment(double hour) const {
     return (hour >= startTime && hour < endTime);
 }
