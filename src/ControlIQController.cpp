@@ -5,21 +5,27 @@
 #include <iostream>
 #include <cmath>
 
+// Constructor: initialize pointers and state
 ControlIQController::ControlIQController()
-    : cgmSensor(nullptr), predictedBG(0.0), isActive(false),
-      deliveryManager(nullptr), activeProfile(nullptr) {}
+    : cgmSensor(nullptr),
+      deliveryManager(nullptr),
+      activeProfile(nullptr),
+      predictedBG(0.0),
+      isActive(false) {}
 
 ControlIQController::~ControlIQController() {}
 
+// Set predicted BG to latest CGM value (direct feed)
 void ControlIQController::processSensorReading(double currentBG) {
     predictedBG = currentBG;
     std::cout << "[ControlIQController] Received sensor reading: " << currentBG << " mmol/L\n";
 }
 
+// Simulate a simple BG trend prediction based on a constant offset
 void ControlIQController::predictBGTrend() {
     if (cgmSensor) {
         double current = cgmSensor->getCurrentBG();
-        double predictionOffset = 1.0;  // Simple offset for simulation.
+        double predictionOffset = 1.0;  // Placeholder for real trend logic
         predictedBG = current + predictionOffset;
         std::cout << "[ControlIQController] Predicted BG in 30 minutes: " << predictedBG << " mmol/L\n";
     } else {
@@ -27,11 +33,13 @@ void ControlIQController::predictBGTrend() {
     }
 }
 
+// Based on predicted BG, take automatic action
 void ControlIQController::applyAutomaticAdjustments() {
     if (!deliveryManager) {
         std::cout << "[ControlIQController] [Error] Insulin Delivery Manager not set.\n";
         return;
     }
+
     if (predictedBG < 3.9) {
         std::cout << "[ControlIQController] Predicted BG (" << predictedBG << " mmol/L) is very low. Stopping basal delivery.\n";
         deliveryManager->stopBasalDelivery();
@@ -61,15 +69,20 @@ void ControlIQController::applyAutomaticAdjustments() {
     }
     else {
         std::cout << "[ControlIQController] Predicted BG (" << predictedBG << " mmol/L) is very high. Delivering correction bolus.\n";
-        double correctionDose = predictedBG - 7.0;  // Placeholder formula.
+        double correctionDose = predictedBG - 7.0;  // Basic placeholder logic
         deliveryManager->deliverBolus(correctionDose, false, 0.0);
     }
 }
 
+// Accessors and mutators
 double ControlIQController::getPredictedBG() const { return predictedBG; }
 void ControlIQController::setPredictedBG(double bg) { predictedBG = bg; }
+
 bool ControlIQController::getIsActive() const { return isActive; }
 void ControlIQController::setIsActive(bool active) { isActive = active; }
+
 CGMSensorInterface* ControlIQController::getCGMSensor() const { return cgmSensor; }
 void ControlIQController::setCGMSensor(CGMSensorInterface* sensor) { cgmSensor = sensor; }
-void ControlIQController::setDeliveryManager(InsulinDeliveryManager* manager) { deliveryManager = manager; }
+
+void ControlIQController::setInsulinDeliveryManager(InsulinDeliveryManager* manager) { deliveryManager = manager; }
+InsulinDeliveryManager* ControlIQController::getInsulinDeliveryManager() const { return deliveryManager; }

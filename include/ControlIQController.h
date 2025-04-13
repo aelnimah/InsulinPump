@@ -1,17 +1,25 @@
+/*
+ControlIQController
+    - Purpose: Adjusts insulin delivery automatically based on CGM sensor data using a simple prediction model.
+    - Spec Refs:
+        + Control IQ Auto Adjustments – Delivers predictive corrections and adjusts basal.
+        + Handle Pump Malfunction – Should be prepared for missing sensor or delivery manager.
+    - Design Notes:
+        + Designed to run periodically (e.g., each tick) to read CGM and adjust dosing.
+        + Uses a basic BG offset for prediction, modifiable later with trend data.
+    - Class Overview:
+        + processSensorReading() – Updates predicted BG based on current CGM input.
+        + predictBGTrend() – Offsets current BG to simulate a short-term prediction.
+        + applyAutomaticAdjustments() – Uses thresholds to stop, reduce, increase basal or trigger bolus.
+*/
+
 #ifndef CONTROLIQCONTROLLER_H
 #define CONTROLIQCONTROLLER_H
-
 
 class CGMSensorInterface;
 class InsulinDeliveryManager;
 class Profile;
-/*
- * ControlIQController
- * -------------------
- * This class automatically adjusts insulin delivery based on CGM readings.
- * It supports the "Control IQ Automatic Adjustments" use case, including predicting
- * blood glucose trends and applying automatic corrections.
- */
+
 class ControlIQController {
 private:
     CGMSensorInterface* cgmSensor;
@@ -24,23 +32,20 @@ public:
     ControlIQController();
     ~ControlIQController();
 
-    // Process a new sensor reading.
     void processSensorReading(double currentBG);
-    // Predict future blood glucose trends.
     void predictBGTrend();
-    // Apply automatic adjustments to insulin delivery.
     void applyAutomaticAdjustments();
 
-    // Getters and setters.
     double getPredictedBG() const;
     void setPredictedBG(double bg);
     bool getIsActive() const;
     void setIsActive(bool active);
-    void setInsulinDeliveryManager(InsulinDeliveryManager* mgr) { deliveryManager = mgr; }
-    InsulinDeliveryManager* getInsulinDeliveryManager() const { return deliveryManager; }
+
+    void setInsulinDeliveryManager(InsulinDeliveryManager* mgr);
+    InsulinDeliveryManager* getInsulinDeliveryManager() const;
+
     CGMSensorInterface* getCGMSensor() const;
     void setCGMSensor(CGMSensorInterface* sensor);
-    void setDeliveryManager(InsulinDeliveryManager* manager);
 };
 
 #endif // CONTROLIQCONTROLLER_H

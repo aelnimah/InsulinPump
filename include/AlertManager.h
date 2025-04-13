@@ -1,3 +1,21 @@
+/*
+AlertManager
+    - Purpose: Monitors hardware states and raises alerts using Alarm objects.
+    - Spec Refs:
+        + Handle Pump Malfunction – Triggers and manages alerts for low battery, cartridge issues, etc.
+        + View Pump Info & History – Supplies active alarm info for review or display.
+    - Design Notes:
+        + Avoids duplicate alarms.
+        + Can be extended with custom thresholds (via Profile).
+        + Prepares for future GUI integration and DataLogger connectivity.
+    - Class Overview:
+        + checkBattery() – Checks battery and raises "BAT_LOW" if < 20%.
+        + checkCartridge() – Checks cartridge volume and raises "CARTRIDGE_EMPTY" if < 1.0U.
+        + raiseAlarm() – Adds new active alarm if not already present.
+        + clearAlarm() – Acknowledges alarm by ID.
+        + update() – Outputs current alarm statuses.
+*/
+
 #ifndef ALERTMANAGER_H
 #define ALERTMANAGER_H
 
@@ -9,37 +27,21 @@ class Profile;
 class Battery;
 class Cartridge;
 
-/*
- * AlertManager
- * ------------
- * This class handles alerts and error conditions.
- * It "uses" Alarm objects to create and manage alarms and also references a Profile
- * to check against user-specific settings.
- *
- * Use Cases Supported:
- * - Handling pump malfunctions (e.g., low battery, low insulin, CGM issues).
- */
 class AlertManager {
 private:
     std::vector<Alarm*> activeAlarms;
-    Profile* profile;  // Used for user-specific alert configuration.
+    Profile* profile;
 
 public:
     AlertManager();
     ~AlertManager();
 
-    // Check the battery and raise an alarm if needed.
     void checkBattery(Battery* batt);
-    // Check the cartridge and raise an alarm if needed.
     void checkCartridge(Cartridge* cart);
-    // Raise an alarm.
     void raiseAlarm(Alarm* alarm);
-    // Clear an alarm by its identifier.
     void clearAlarm(const std::string &alarmId);
-    // Update the alert status (e.g., recheck conditions periodically).
-    void update();
+    void update(); // Output or refresh active alarms
 
-    // Getter and setter for the Profile.
     Profile* getProfile() const;
     void setProfile(Profile* p);
 };

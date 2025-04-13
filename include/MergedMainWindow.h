@@ -3,83 +3,98 @@
 
 #include <QMainWindow>
 #include <QTime>
+#include <QListWidget>
+#include <QMessageBox>
+#include <QDebug>
 
-class QStackedWidget;
-class QLabel;
-class QListWidget;
+#include "PumpSimulator.h"
+
+
 class QTimer;
+class QLabel;
 class QWidget;
+class QStackedWidget;
+
+class DataLogger;
+class Profile;
+class ProfileCRUDController;
 class ProfileManager;
+
 class BolusManager;
-class InsulinDeliveryManager;
 class CGMSensorInterface;
 class Battery;
 class Cartridge;
 class ControlIQController;
 class AlertManager;
-class ProfileCRUDController;
-class DataLogger;
-class Profile;
 
 class MergedMainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MergedMainWindow(ProfileManager* mgr, QWidget* parent = nullptr);
+    explicit MergedMainWindow(PumpSimulator* simulator, ProfileManager* mgr, QWidget* parent = nullptr);
     ~MergedMainWindow();
 
 private slots:
     void onSimulationTick();
-    void showHistoryPage();
 
 private:
+    // Home Page
     void setupHomePage();
+    void showHomePage();
+
+    // Options Page
     void setupOptionsPage();
+    void showOptionsPage();
+
+    // CRUD
     void setupProfilesPage();
-    void setupAddProfilePage();
-    void setupViewProfilePage();
-    void setupBolusInputPage();
-    void setupBasalControlPage();
-    void setupHistoryPage();
+    void showPersonalProfilesPage();
     void refreshProfilesList();
-    void updateHistoryList();
+    void setupAddProfilePage();
+    void showAddProfilePage();
+    void setupViewProfilePage();
+    void showViewProfilePage(Profile* profile);
+
+    // Bolus Use Case
+    void setupBolusInputPage();
+    void showBolusPage();
     void showBolusConfirmationPage(double dose);
     void showExtendedBolusConfigPage(double dose);
-    void showHomePage();
-    void showOptionsPage();
-    void showPersonalProfilesPage();
-    void showAddProfilePage();
-    void showViewProfilePage(Profile* profile);
-    void showBolusPage();
-    void showBasalControlPage();
 
-    QTimer* simulationTimer = nullptr;
-    QTime simulationTime;
-    int tickCount = 0;
-    QStackedWidget* stackedWidget = nullptr;
-    QWidget* homePage = nullptr;
-    QWidget* optionsPage = nullptr;
-    QWidget* profilesPage = nullptr;
-    QWidget* addProfilePage = nullptr;
-    QWidget* viewProfilePage = nullptr;
-    QWidget* bolusInputPage = nullptr;
-    QWidget* basalControlPage = nullptr;
-    QWidget* historyPage = nullptr;
-    QLabel* simTimeLabel = nullptr;
-    QListWidget* profileList = nullptr;
-    QListWidget* historyList = nullptr;
+    DataLogger* dataLogger = nullptr;
+
+    PumpSimulator* pumpSimulator = nullptr;
+
     ProfileManager* profileManager = nullptr;
-    BolusManager* bolusManager = nullptr;
+    ProfileCRUDController* crudController = nullptr;
+    Profile* currentProfile = nullptr;
+
     InsulinDeliveryManager* insulinDeliveryMgr = nullptr;
     CGMSensorInterface* cgmInterface = nullptr;
     Battery* battery = nullptr;
     Cartridge* cartridge = nullptr;
     ControlIQController* controlIQ = nullptr;
     AlertManager* alertManager = nullptr;
-    ProfileCRUDController* crudController = nullptr;
-    DataLogger* dataLogger = nullptr;
-    Profile* currentProfile = nullptr;
+    BolusManager* bolusManager = nullptr;
+
+    QStackedWidget* stackedWidget = nullptr;
+    QLabel* simTimeLabel = nullptr;
+    QTimer* simulationTimer = nullptr;
+    QTime simulationTime;
+
+    QWidget* homePage = nullptr;
+    QWidget* optionsPage = nullptr;
+
+    QWidget* profilesPage = nullptr;
+    QListWidget* profileList = nullptr;
+    QWidget* addProfilePage = nullptr;
+    QWidget* viewProfilePage = nullptr;
+
+    QWidget* bolusInputPage = nullptr;
+    QWidget* bolusConfirmationPage = nullptr;
+    QLineEdit* bolusDoseEdit = nullptr;
+    QWidget* extendedBolusPage = nullptr;
 };
 
 #endif // MERGEDMAINWINDOW_H

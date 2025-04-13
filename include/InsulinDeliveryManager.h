@@ -1,7 +1,21 @@
+/*
+InsulinDeliveryManager
+    - Purpose: Manages delivery of insulin via bolus (immediate and extended) and basal dosing, while tracking IOB.
+    - Spec Refs:
+        + Deliver Manual Bolus
+        + Start/Stop/Resume Basal
+        + Control IQ Auto Adjustments
+        + Handle Pump Malfunction
+        + View Pump Info & History
+    - Design Notes:
+        + Interfaces with Cartridge and Battery to simulate hardware.
+        + Supports future Control IQ logic for predictive delivery.
+        + Tracks and executes extended bolus events based on simulation time.
+*/
+
 #ifndef INSULINDELIVERYMANAGER_H
 #define INSULINDELIVERYMANAGER_H
 
-#include <string>
 #include <vector>
 
 class BolusCalculator;
@@ -9,11 +23,9 @@ class Battery;
 class Cartridge;
 
 struct ExtendedDoseEvent {
-    double dose;          // dose to deliver in this event
-    double scheduledTime; // simulated time (in minutes) when this event should fire
+    double dose;
+    double scheduledTime; // In simulated minutes
 };
-
-
 
 class InsulinDeliveryManager {
 private:
@@ -21,6 +33,7 @@ private:
     double insulinOnBoard;
     bool basalRunning;
     double previousBasalRate;
+
     BolusCalculator* bolusCalculator;
     Battery* battery;
     Cartridge* cartridge;
@@ -31,24 +44,22 @@ public:
     InsulinDeliveryManager();
     ~InsulinDeliveryManager();
 
-    // Immediate bolus delivery.
-    // (If extended==false, duration is ignored.)
-    void deliverBolus(double amount, bool extended, double duration);
-
-    // Extended bolus delivery with user-specified immediate portion, duration, and splits.
+    void deliverBolus(double amount, bool extended, double duration = 0.0);
     void deliverBolus(double totalDose, bool extended, double immediateAmount, double duration, int splits);
     
+    // For CLI testing: supports simulation-time aware scheduling
+    void deliverBolus(double totalDose, bool extended, double immediateAmount, double duration, int splits, double currentSimTime);
 
-    // Process scheduled extended doses given the current simulated time (in minutes)
+
     void processScheduledExtendedDoses(double currentSimTime);
 
     void startBasalDelivery(double rate);
     void stopBasalDelivery();
     void resumeBasalDelivery();
-    
+
     void updateIOB(double elapsedTime);
     bool hasSufficientInsulin(double requiredUnits);
-    void onTick(double elapsedTime);
+    void onTick(double elapsedTime); // Simulates real-time updates
 
     double getCurrentBasalRate() const;
     void setCurrentBasalRate(double rate);
@@ -57,8 +68,8 @@ public:
     bool isBasalRunning() const;
     void setBasalRunning(bool running);
 
-    void setCartridge(Cartridge* cart) { cartridge = cart; }
-    void setBolusCalculator(BolusCalculator* bc) { bolusCalculator = bc; }
+    void setCartridge(Cartridge* cart);
+    void setBolusCalculator(BolusCalculator* bc);
     void setBattery(Battery* bat);
 };
 

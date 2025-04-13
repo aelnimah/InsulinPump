@@ -3,7 +3,6 @@
 #include "Battery.h"
 #include "Cartridge.h"
 #include "Profile.h"
-
 #include <iostream>
 #include <sstream>
 
@@ -16,6 +15,7 @@ AlertManager::~AlertManager() {
     activeAlarms.clear();
 }
 
+// Raises "BAT_LOW" if battery level < 20%
 void AlertManager::checkBattery(Battery* batt) {
     if (!batt) return;
     int level = batt->getLevel();
@@ -30,6 +30,7 @@ void AlertManager::checkBattery(Battery* batt) {
     }
 }
 
+// Raises "CARTRIDGE_EMPTY" if insulin < 1.0 units
 void AlertManager::checkCartridge(Cartridge* cart) {
     if (!cart) return;
     double volume = cart->getCurrentVolume();
@@ -44,6 +45,7 @@ void AlertManager::checkCartridge(Cartridge* cart) {
     }
 }
 
+// Only raise a new alarm if it's not already active
 void AlertManager::raiseAlarm(Alarm* alarm) {
     for (Alarm* a : activeAlarms) {
         if (a->getAlarmId() == alarm->getAlarmId() && a->getIsActive()) {
@@ -56,10 +58,11 @@ void AlertManager::raiseAlarm(Alarm* alarm) {
     std::cout << "[AlertManager] Alarm raised: " << alarm->getMessage() << "\n";
 }
 
+// Acknowledge and deactivate an alarm by ID
 void AlertManager::clearAlarm(const std::string &alarmId) {
-    for (size_t i = 0; i < activeAlarms.size(); i++) {
-        if (activeAlarms[i]->getAlarmId() == alarmId && activeAlarms[i]->getIsActive()) {
-            activeAlarms[i]->acknowledge();
+    for (Alarm* alarm : activeAlarms) {
+        if (alarm->getAlarmId() == alarmId && alarm->getIsActive()) {
+            alarm->acknowledge();
             std::cout << "[AlertManager] Alarm " << alarmId << " acknowledged and cleared.\n";
             return;
         }
@@ -67,6 +70,7 @@ void AlertManager::clearAlarm(const std::string &alarmId) {
     std::cout << "[AlertManager] Alarm " << alarmId << " not found.\n";
 }
 
+// Print all currently active alarms
 void AlertManager::update() {
     std::cout << "[AlertManager] Updating alarms. Active alarms:\n";
     for (Alarm* a : activeAlarms) {
@@ -80,3 +84,4 @@ void AlertManager::update() {
 
 Profile* AlertManager::getProfile() const { return profile; }
 void AlertManager::setProfile(Profile* p) { profile = p; }
+

@@ -1,3 +1,20 @@
+/*
+BolusManager
+    - Purpose: Coordinates insulin bolus calculations and delivery using profile data, CGM input, and delivery logic.
+    - Spec Refs:
+        + Deliver Manual Bolus – Computes and delivers insulin based on BG, carbs, and IOB.
+        + Control IQ Auto Adjustments – Can pull BG from CGM for predictive correction boluses.
+        + View Pump Info & History – Integrates with delivery system for logging purposes.
+    - Design Notes:
+        + Uses ProfileManager to fetch the active user profile.
+        + Uses BolusCalculator for dose computation and delegates to InsulinDeliveryManager for delivery.
+        + Optionally uses CGMSensorInterface to obtain real-time glucose values.
+    - Class Overview:
+        + computeRecommendedDose() – Calculates dose based on inputs and profile data.
+        + deliverBolus(...) – Sends insulin via delivery manager (immediate or extended).
+        + getBGFromCGM() – Returns CGM blood glucose (if sensor available).
+*/
+
 #ifndef BOLUSMANAGER_H
 #define BOLUSMANAGER_H
 
@@ -12,23 +29,16 @@ public:
                  InsulinDeliveryManager* idm, CGMSensorInterface* cgm = nullptr);
     ~BolusManager();
 
-    // Compute the recommended dose based on current BG and carbohydrate input.
     double computeRecommendedDose(double currentBG, double carbIntake);
-
-    // Immediate bolus delivery.
     void deliverBolus(double dose, bool extended = false, double duration = 0.0);
-    
-    // Extended bolus delivery with user-specified parameters.
     void deliverBolus(double dose, bool extended, double immediateAmount, double duration, int splits);
-    
-    // Optionally, get the current BG from the CGM sensor if available.
     double getBGFromCGM() const;
 
 private:
     ProfileManager* profileManager;
     BolusCalculator* bolusCalculator;
     InsulinDeliveryManager* deliveryManager;
-    CGMSensorInterface* cgmSensor;  // Optional, can be nullptr.
+    CGMSensorInterface* cgmSensor;
 };
 
 #endif // BOLUSMANAGER_H

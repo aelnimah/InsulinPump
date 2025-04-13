@@ -1,21 +1,35 @@
 #ifndef PUMPSIMULATOR_H
 #define PUMPSIMULATOR_H
 
-class ProfileManager; // Forward declaration
+class ProfileManager;
 class BolusCalculator;
 class InsulinDeliveryManager;
 class CGMSensorInterface;
+class ControlIQController;
+class AlertManager;
+class Battery;
+class Cartridge;
 
-// Controls simulation (starting, stopping, updating state)
 class PumpSimulator {
 private:
     bool isRunning;
-    ProfileManager* profileManager;
 
-    // Bolus dependencies
+    // Core references
+    ProfileManager* profileManager;
     BolusCalculator* bolusCalculator;
     InsulinDeliveryManager* deliveryManager;
     CGMSensorInterface* cgmSensor;
+
+    // System extensions
+    ControlIQController* controlIQ;
+    AlertManager* alertManager;
+    Battery* battery;
+    Cartridge* cartridge;
+
+    // Time tracking
+    double simulatedMinutes = 0.0;     // For CLI
+    int guiSimulatedMinutes = 0;       // For GUI
+    bool cliMode = false;
 
 public:
     PumpSimulator();
@@ -23,24 +37,39 @@ public:
 
     void startSimulation();
     void stopSimulation();
-    void updateSimulationState();
+    void updateSimulationState(); // Simulates one tick (1 min)
     void shutdown();
 
-    bool getIsRunning() const;
-    void setIsRunning(bool running);
-
+    // Setters
     void setProfileManager(ProfileManager* mgr);
-    ProfileManager* getProfileManager();
-
-    // New setter methods for bolus dependencies
     void setBolusCalculator(BolusCalculator* bc);
     void setInsulinDeliveryManager(InsulinDeliveryManager* idm);
     void setCGMSensorInterface(CGMSensorInterface* cgm);
+    void setControlIQController(ControlIQController* ctrl);
+    void setAlertManager(AlertManager* a);
+    void setBattery(Battery* b);
+    void setCartridge(Cartridge* c);
 
-    // New getters (if needed)
+    // Getters
+    bool getIsRunning() const;
+    void setIsRunning(bool running); 
+    ProfileManager* getProfileManager();
     BolusCalculator* getBolusCalculator() const;
     InsulinDeliveryManager* getInsulinDeliveryManager() const;
     CGMSensorInterface* getCGMSensorInterface() const;
+    ControlIQController* getControlIQController() const;
+    AlertManager* getAlertManager() const;
+    Battery* getBattery() const;
+    Cartridge* getCartridge() const;
+
+    // CLI Testing support
+    void setCLIMode(bool enabled) { cliMode = enabled; }
+    void incrementSimTime(double minutes);     // CLI: Add time
+    double getSimulatedMinutes() const;        // CLI: Read time
+    void setGUISimTime(int minutes);           // GUI: Update GUI time
+
+private:
+    int getCurrentSimTime() const; // Shared between CLI and GUI
 };
 
 #endif // PUMPSIMULATOR_H
