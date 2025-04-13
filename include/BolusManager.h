@@ -32,6 +32,8 @@ public:
     double computeRecommendedDose(double currentBG, double carbIntake);
     void deliverBolus(double dose, bool extended = false, double duration = 0.0);
     void deliverBolus(double dose, bool extended, double immediateAmount, double duration, int splits);
+    void deliverBolus(double dose, bool extended, double immediateAmount, double duration, int splits, int startTime);
+
     double getBGFromCGM() const;
 
 private:

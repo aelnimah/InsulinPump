@@ -416,6 +416,7 @@ compiler_moc_header_make_all: moc_MergedMainWindow.cpp
 compiler_moc_header_clean:
 	-$(DEL_FILE) moc_MergedMainWindow.cpp
 moc_MergedMainWindow.cpp: include/MergedMainWindow.h \
+		include/PumpSimulator.h \
 		moc_predefs.h \
 		/usr/lib/qt5/bin/moc
 	/usr/lib/qt5/bin/moc $(DEFINES) --include /media/sf_VM/pump-sim-20250410/InsulinPump/moc_predefs.h -I/usr/lib/x86_64-linux-gnu/qt5/mkspecs/linux-g++ -I/media/sf_VM/pump-sim-20250410/InsulinPump -I/media/sf_VM/pump-sim-20250410/InsulinPump/include -I/media/sf_VM/pump-sim-20250410/InsulinPump/ui -I/usr/include/x86_64-linux-gnu/qt5 -I/usr/include/x86_64-linux-gnu/qt5/QtWidgets -I/usr/include/x86_64-linux-gnu/qt5/QtGui -I/usr/include/x86_64-linux-gnu/qt5/QtCore -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/local/include -I/usr/include/x86_64-linux-gnu -I/usr/include include/MergedMainWindow.h -o moc_MergedMainWindow.cpp
@@ -436,7 +437,16 @@ compiler_clean: compiler_moc_predefs_clean compiler_moc_header_clean
 
 ####### Compile
 
-main.o: src/main.cpp include/MergedMainWindow.h
+main.o: src/main.cpp include/MergedMainWindow.h \
+		include/PumpSimulator.h \
+		include/ProfileManager.h \
+		include/BolusCalculator.h \
+		include/InsulinDeliveryManager.h \
+		include/Battery.h \
+		include/Cartridge.h \
+		include/CGMSensorInterface.h \
+		include/ControlIQController.h \
+		include/AlertManager.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o src/main.cpp
 
 PumpSimulator.o: src/PumpSimulator.cpp include/PumpSimulator.h \
@@ -520,7 +530,20 @@ Cartridge.o: src/Cartridge.cpp include/Cartridge.h
 Battery.o: src/Battery.cpp include/Battery.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o Battery.o src/Battery.cpp
 
-MergedMainWindow.o: src/MergedMainWindow.cpp include/MergedMainWindow.h
+MergedMainWindow.o: src/MergedMainWindow.cpp include/MergedMainWindow.h \
+		include/PumpSimulator.h \
+		include/DataLogger.h \
+		include/ProfileManager.h \
+		include/ProfileCRUDController.h \
+		include/Profile.h \
+		include/BasalSegment.h \
+		include/BolusManager.h \
+		include/InsulinDeliveryManager.h \
+		include/CGMSensorInterface.h \
+		include/Battery.h \
+		include/Cartridge.h \
+		include/ControlIQController.h \
+		include/AlertManager.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o MergedMainWindow.o src/MergedMainWindow.cpp
 
 moc_MergedMainWindow.o: moc_MergedMainWindow.cpp 

@@ -122,3 +122,11 @@ void PumpSimulator::setGUISimTime(int minutes) {
 int PumpSimulator::getCurrentSimTime() const {
     return cliMode ? static_cast<int>(simulatedMinutes) : guiSimulatedMinutes;
 }
+
+double PumpSimulator::getCurrentBG() const {
+    return cgmSensor ? cgmSensor->getCurrentBG() : 0.0;
+}
+
+double PumpSimulator::getIOB() const {
+    return deliveryManager ? deliveryManager->getInsulinOnBoard() : 0.0;
+}

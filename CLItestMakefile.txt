@@ -1,10 +1,12 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Iinclude -Wall
 SRC_DIR = src
-OBJ_DIR = obj
-BIN = pump_simulator
+BIN = PumpTesterSim
 
-SOURCES := $(filter-out $(SRC_DIR)/MergedMainWindow.cpp, $(wildcard $(SRC_DIR)/*.cpp))
+# Include all .cpp files in src excluding GUI
+SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
+SOURCES := $(filter-out $(SRC_DIR)/main.cpp $(SRC_DIR)/MergedMainWindow.cpp, $(SOURCES))
+SOURCES += $(SRC_DIR)/main2.cpp
 
 OBJECTS := $(SOURCES:.cpp=.o)
 

@@ -83,6 +83,9 @@ private:
     QTimer* simulationTimer = nullptr;
     QTime simulationTime;
 
+    QLabel* iobLabel = nullptr;
+    QLabel* bgLabel = nullptr;
+
     QWidget* homePage = nullptr;
     QWidget* optionsPage = nullptr;
 

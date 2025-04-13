@@ -39,11 +39,12 @@ MergedMainWindow::MergedMainWindow(PumpSimulator* simulator, ProfileManager* mgr
         cgmInterface        = pumpSimulator->getCGMSensorInterface();
         controlIQ           = pumpSimulator->getControlIQController();
         alertManager        = pumpSimulator->getAlertManager();
-        battery             = new Battery();   // standalone for now (used in Options)
-        cartridge           = new Cartridge(); // ditto
+        battery = pumpSimulator->getBattery();
+        cartridge = pumpSimulator->getCartridge();
 
         BolusCalculator* calc = pumpSimulator->getBolusCalculator();
         bolusManager = new BolusManager(profileManager, calc, insulinDeliveryMgr, cgmInterface);
+        
     }
 
     // Init GUI simulation clock
@@ -108,33 +109,56 @@ void MergedMainWindow::onSimulationTick()
     static int tickCount = 0;
     ++tickCount;
 
-    if (pumpSimulator) {
-        pumpSimulator->setGUISimTime(tickCount);
-        pumpSimulator->updateSimulationState();
-    }
+    pumpSimulator->setGUISimTime(tickCount);
+    pumpSimulator->updateSimulationState();
+
+    // Refresh labels
+    if (iobLabel)
+    iobLabel->setText("IOB: " + QString::number(insulinDeliveryMgr->getInsulinOnBoard(), 'f', 2) + " U");
+
+    if (bgLabel)
+    bgLabel->setText("BG: " + QString::number(cgmInterface->getCurrentBG(), 'f', 1) + " mmol/L");
 }
 
 void MergedMainWindow::setupHomePage()
 {
     homePage = new QWidget(this);
-    QVBoxLayout* layout = new QVBoxLayout(homePage);
+    QVBoxLayout* mainLayout = new QVBoxLayout(homePage);
 
+    // --- Top-left IOB/BG layout ---
+    QVBoxLayout* infoLayout = new QVBoxLayout();
+    iobLabel = new QLabel("IOB: 0.00 U", homePage);
+    bgLabel = new QLabel("BG: 0.5 mmol/L", homePage);
+    infoLayout->addWidget(iobLabel);
+    infoLayout->addWidget(bgLabel);
+    infoLayout->addStretch(); // Pushes labels up
+
+    QHBoxLayout* topRowLayout = new QHBoxLayout();
+    topRowLayout->addLayout(infoLayout);
+    topRowLayout->addStretch(); // Pushes everything to the left
+
+    mainLayout->addLayout(topRowLayout);
+
+    // --- Time label ---
+    simTimeLabel->setAlignment(Qt::AlignCenter);
+    simTimeLabel->setStyleSheet("font-weight: bold; font-size: 24px;");
+    mainLayout->addWidget(simTimeLabel);
+
+    // --- Buttons ---
     QPushButton* optionsBtn = new QPushButton("Options", homePage);
-    layout->addWidget(optionsBtn);
-    connect(optionsBtn, &QPushButton::clicked, this, &MergedMainWindow::showOptionsPage);
-
     QPushButton* bolusBtn = new QPushButton("Bolus", homePage);
-    layout->addWidget(bolusBtn);
+    QPushButton* historyBtn = new QPushButton("History", homePage);
+
+    mainLayout->addWidget(optionsBtn);
+    mainLayout->addWidget(bolusBtn);
+    mainLayout->addWidget(historyBtn);
+
+    connect(optionsBtn, &QPushButton::clicked, this, &MergedMainWindow::showOptionsPage);
     connect(bolusBtn, &QPushButton::clicked, this, &MergedMainWindow::showBolusPage);
 
-
-    QPushButton* historyBtn = new QPushButton("History", homePage);
-    layout->addWidget(historyBtn);
-
-    homePage->setLayout(layout);
-    
-    // We'll connect these to actual views later as we build them
+    homePage->setLayout(mainLayout);
 }
+
 
 void MergedMainWindow::setupOptionsPage()
 {
@@ -383,8 +407,11 @@ void MergedMainWindow::setupBolusInputPage()
 
     // --- Form inputs ---
     QFormLayout* formLayout = new QFormLayout();
-    QLineEdit* bgLineEdit = new QLineEdit("180", bolusInputPage);
+
+    double currentBG = cgmInterface->getCurrentBG();
+    QLineEdit* bgLineEdit = new QLineEdit(QString::number(currentBG), bolusInputPage);
     bgLineEdit->setReadOnly(true);
+
     QLineEdit* carbLineEdit = new QLineEdit(bolusInputPage);
 
     formLayout->addRow("Blood Glucose (mmol/L):", bgLineEdit);
@@ -405,10 +432,13 @@ void MergedMainWindow::setupBolusInputPage()
     // --- Connections ---
     connect(manualBGButton, &QPushButton::clicked, [=]() {
         bgLineEdit->setReadOnly(false);
+        double currentBG = cgmInterface->getCurrentBG();
+        bgLineEdit->setText(QString::number(currentBG));
     });
+    
 
     connect(calculateButton, &QPushButton::clicked, [=]() {
-        double bg = bgLineEdit->text().toDouble();
+        double bg = cgmInterface->getCurrentBG();
         double carbs = carbLineEdit->text().toDouble();
     
         qDebug() << "[Bolus Input] BG:" << bg << "Carbs:" << carbs;
@@ -417,7 +447,7 @@ void MergedMainWindow::setupBolusInputPage()
         if (!activeProfile) {
             QMessageBox::warning(bolusInputPage, "No Active Profile", "Please set an active profile before calculating bolus.");
             dataLogger->logEvent("BolusCalc", "Attempted without active profile.");
-            return;  // ✅ just return (not `return 0.0`)
+            return;
         }
     
         if (!bolusManager) {
@@ -548,7 +578,7 @@ void MergedMainWindow::showExtendedBolusConfigPage(double dose)
                                 .arg(immediate).arg(remaining).arg(splits).arg(perSplit).arg(duration);
 
             QMessageBox::information(extendedBolusPage, "Extended Bolus", summary);
-            bolusManager->deliverBolus(dose, true, immediate, duration, splits);
+            bolusManager->deliverBolus(dose, true, immediate, duration, splits, pumpSimulator->getCurrentSimTime());
             dataLogger->logEvent("BolusDelivery", "Extended bolus delivered: " + std::to_string(dose));
             stackedWidget->setCurrentWidget(homePage);
         });

@@ -68,8 +68,11 @@ public:
     double getSimulatedMinutes() const;        // CLI: Read time
     void setGUISimTime(int minutes);           // GUI: Update GUI time
 
-private:
     int getCurrentSimTime() const; // Shared between CLI and GUI
+
+    double getCurrentBG() const;
+    double getIOB() const;
+
 };
 
 #endif // PUMPSIMULATOR_H

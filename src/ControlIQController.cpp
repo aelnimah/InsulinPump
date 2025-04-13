@@ -23,14 +23,20 @@ void ControlIQController::processSensorReading(double currentBG) {
 
 // Simulate a simple BG trend prediction based on a constant offset
 void ControlIQController::predictBGTrend() {
-    if (cgmSensor) {
-        double current = cgmSensor->getCurrentBG();
-        double predictionOffset = 1.0;  // Placeholder for real trend logic
-        predictedBG = current + predictionOffset;
-        std::cout << "[ControlIQController] Predicted BG in 30 minutes: " << predictedBG << " mmol/L\n";
-    } else {
-        std::cout << "[ControlIQController] [Error] No CGM sensor available for prediction.\n";
-    }
+    if (!cgmSensor || !deliveryManager) return;
+
+    double currentBG = cgmSensor->getCurrentBG();
+    double iob = deliveryManager->getInsulinOnBoard();
+
+    // Simulate BG drop based on IOB: e.g. 1 U drops BG by 1.5 mmol/L over 30 min
+    double predictedDrop = iob * 1.5;
+    double predictedBG = currentBG - predictedDrop;
+
+    std::cout << "[ControlIQController] Current BG: " << currentBG << " mmol/L\n";
+    std::cout << "[ControlIQController] IOB: " << iob << " U → Predicted drop: " << predictedDrop << "\n";
+    std::cout << "[ControlIQController] Predicted BG in 30 minutes: " << predictedBG << " mmol/L\n";
+
+    this->predictedBG = predictedBG;
 }
 
 // Based on predicted BG, take automatic action

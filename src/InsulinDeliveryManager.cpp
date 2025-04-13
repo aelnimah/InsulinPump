@@ -192,10 +192,12 @@ void InsulinDeliveryManager::resumeBasalDelivery() {
 
 // Simulates IOB decay based on elapsed time
 void InsulinDeliveryManager::updateIOB(double elapsedTime) {
-    double decayRate = 0.5; // Units/hour
+    double decayRate = 0.05; // 3U/hour
     double decay = decayRate * elapsedTime;
 
     insulinOnBoard = std::max(0.0, insulinOnBoard - decay);
+
+    std::cout << "[IOB] Current insulin on board: " << insulinOnBoard << " units.\n";
 }
 
 // Returns true if cartridge has enough insulin
@@ -205,7 +207,7 @@ bool InsulinDeliveryManager::hasSufficientInsulin(double requiredUnits) {
 
 // Called every tick: handles basal dose and IOB update
 void InsulinDeliveryManager::onTick(double elapsedTime) {
-    std::cout << "[Basal] Tick for " << elapsedTime << " minutes.\n";
+    updateIOB(elapsedTime);
 
     if (!basalRunning) {
         std::cout << "[Basal] Skipped (not running).\n";
@@ -221,8 +223,6 @@ void InsulinDeliveryManager::onTick(double elapsedTime) {
             std::cout << "[Error] Failed basal delivery.\n";
         }
     }
-
-    updateIOB(elapsedTime);
 }
 
 // Accessors

@@ -22,6 +22,9 @@ public:
     void runAllTests();
     void testManualBolus();
     void testExtendedBolus();
+    void testBasalControl();
+
+    void testIOBDecayWithExtendedBolus();
 
 private:
     void simulateTime(double minutes);

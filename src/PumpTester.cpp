@@ -87,18 +87,19 @@ PumpTester::~PumpTester() {
 void PumpTester::runAllTests() {
     simulator->setCLIMode(true);
     testManualBolus();
-    testExtendedBolus();
-    // testBasalDelivery();
+    // testExtendedBolus();
+    // testBasalControl();
     // testControlIQ();
     // testAlerts();
+    // testIOBDecayWithExtendedBolus();
 }
 
 void PumpTester::testManualBolus() {
     printHeader("Manual Bolus Test");
 
-    double currentBG = 10.0;
+    double currentBG = simulator->getCurrentBG();
+    double iob = simulator->getIOB();
     double carbs = 50.0;
-    double iob = 2.0;
 
     std::cout << "Current BG: " << currentBG << " mmol/L\n";
     std::cout << "Carb intake: " << carbs << " g\n";
@@ -110,7 +111,7 @@ void PumpTester::testManualBolus() {
     std::cout << "\nDelivering bolus...\n";
     deliveryManager->deliverBolus(recommendedDose, false);
 
-    simulateTime(5);  // Trigger simulation loop for 5 minutes
+    simulateTime(20);  // Trigger simulation loop for 5 minutes
 }
 
 void PumpTester::testExtendedBolus() {
@@ -137,6 +138,61 @@ void PumpTester::testExtendedBolus() {
     deliveryManager->deliverBolus(totalDose, true, immediate, duration, splits, simulator->getSimulatedMinutes());
 
     simulateTime(5);  // Should deliver the remaining 4U over 4 minutes
+}
+
+void PumpTester::testBasalControl() {
+    printHeader("ControlIQ Basal & Prediction Test");
+
+    std::cout << "Starting basal delivery at 1.0 U/hr...\n";
+    deliveryManager->startBasalDelivery(1.0);
+
+    // Simulate some initial IOB to cause BG drop
+    deliveryManager->setInsulinOnBoard(3.0);
+    std::cout << "IOB manually set to 3.0 U\n";
+
+    // Simulate Time: should result in ControlIQ detecting drop
+    std::cout << "\n[Simulating Time: 6 minutes]\n";
+    simulateTime(6);
+
+    std::cout << "\nReducing IOB to 1.0 U to simulate insulin fading...\n";
+    deliveryManager->setInsulinOnBoard(1.0);
+
+    std::cout << "\n[Simulating Time: 6 more minutes]\n";
+    simulateTime(6);
+
+    std::cout << "\nStopping basal delivery...\n";
+    deliveryManager->stopBasalDelivery();
+
+    std::cout << "\n[Simulating Time: 3 post-stop minutes]\n";
+    simulateTime(3);
+
+    std::cout << "\n[ControlIQ Basal Test Complete]\n";
+}
+
+void PumpTester::testIOBDecayWithExtendedBolus() {
+    printHeader("IOB Decay with Extended Bolus");
+
+    double currentBG = 7.0;
+    double carbs = 60.0;
+    double iob = 0.0;
+
+    std::cout << "Starting with BG: " << currentBG << " mmol/L\n";
+    std::cout << "Carb intake: " << carbs << " g\n";
+
+    // Calculate total dose
+    double totalDose = bolusCalculator->calculateBolus(currentBG, carbs, iob, activeProfile);
+    std::cout << "Total Recommended Dose: " << totalDose << " U\n";
+
+    // Schedule: 3U now, 4U over 4 mins
+    double immediate = 3.0;
+    double duration = 4.0;
+    int splits = 4;
+
+    std::cout << "\nDelivering extended bolus...\n";
+    deliveryManager->deliverBolus(totalDose, true, immediate, duration, splits, simulator->getSimulatedMinutes());
+
+    // Simulate time passing
+    simulateTime(8); // Watch as IOB increases and then starts to decay
 }
 
 void PumpTester::simulateTime(double minutes) {
