@@ -127,8 +127,8 @@ void MergedMainWindow::setupHomePage()
 
     // --- Top-left IOB/BG layout ---
     QVBoxLayout* infoLayout = new QVBoxLayout();
-    iobLabel = new QLabel("IOB: 0.00 U", homePage);
-    bgLabel = new QLabel("BG: 0.5 mmol/L", homePage);
+    iobLabel = new QLabel("IOB: " + QString::number(insulinDeliveryMgr->getInsulinOnBoard()) + " U", homePage);
+    bgLabel = new QLabel("BG: " + QString::number(cgmInterface->getCurrentBG()) + " mmol/L", homePage);
     infoLayout->addWidget(iobLabel);
     infoLayout->addWidget(bgLabel);
     infoLayout->addStretch(); // Pushes labels up
@@ -155,10 +155,44 @@ void MergedMainWindow::setupHomePage()
 
     connect(optionsBtn, &QPushButton::clicked, this, &MergedMainWindow::showOptionsPage);
     connect(bolusBtn, &QPushButton::clicked, this, &MergedMainWindow::showBolusPage);
+    connect(historyBtn, &QPushButton::clicked, this, &MergedMainWindow::showHistoryPage);
 
     homePage->setLayout(mainLayout);
 }
 
+void MergedMainWindow::setupHistoryPage()
+{
+    historyPage = new QWidget(this);
+    QVBoxLayout* layout = new QVBoxLayout(historyPage);
+
+    historyList = new QListWidget(historyPage);
+    layout->addWidget(historyList);
+
+    QPushButton* backBtn = new QPushButton("Back", historyPage);
+    layout->addWidget(backBtn);
+    connect(backBtn, &QPushButton::clicked, this, &MergedMainWindow::showOptionsPage);
+
+    historyPage->setLayout(layout);
+    stackedWidget->addWidget(historyPage);
+
+    updateHistoryList();
+}
+
+void MergedMainWindow::updateHistoryList()
+{
+    if (!historyList)
+        return;
+
+    historyList->clear();
+    auto events = dataLogger->getEvents();
+
+    if (events.empty()) {
+        historyList->addItem("No History Available");
+    } else {
+        for (const auto& e : events)
+            historyList->addItem(QString::fromStdString(e));
+    }
+}
 
 void MergedMainWindow::setupOptionsPage()
 {
@@ -168,6 +202,10 @@ void MergedMainWindow::setupOptionsPage()
     QPushButton* profilesButton = new QPushButton("Personal Profiles", optionsPage);
     layout->addWidget(profilesButton);
     connect(profilesButton, &QPushButton::clicked, this, &MergedMainWindow::showPersonalProfilesPage);
+
+    QPushButton* basalBtn = new QPushButton("Basal Control", optionsPage);
+    layout->addWidget(basalBtn);
+    connect(basalBtn, &QPushButton::clicked, this, &MergedMainWindow::showBasalControlPage);
 
     QPushButton* homeButton = new QPushButton("Home", optionsPage);
     layout->addWidget(homeButton);
@@ -408,8 +446,7 @@ void MergedMainWindow::setupBolusInputPage()
     // --- Form inputs ---
     QFormLayout* formLayout = new QFormLayout();
 
-    double currentBG = cgmInterface->getCurrentBG();
-    QLineEdit* bgLineEdit = new QLineEdit(QString::number(currentBG), bolusInputPage);
+    bgLineEdit = new QLineEdit(bolusInputPage);  // Don't set text yet
     bgLineEdit->setReadOnly(true);
 
     QLineEdit* carbLineEdit = new QLineEdit(bolusInputPage);
@@ -435,36 +472,34 @@ void MergedMainWindow::setupBolusInputPage()
         double currentBG = cgmInterface->getCurrentBG();
         bgLineEdit->setText(QString::number(currentBG));
     });
-    
 
     connect(calculateButton, &QPushButton::clicked, [=]() {
-        double bg = cgmInterface->getCurrentBG();
+        double bg = bgLineEdit->text().toDouble();
         double carbs = carbLineEdit->text().toDouble();
-    
+
         qDebug() << "[Bolus Input] BG:" << bg << "Carbs:" << carbs;
-    
+
         Profile* activeProfile = profileManager->getActiveProfile();
         if (!activeProfile) {
             QMessageBox::warning(bolusInputPage, "No Active Profile", "Please set an active profile before calculating bolus.");
             dataLogger->logEvent("BolusCalc", "Attempted without active profile.");
             return;
         }
-    
+
         if (!bolusManager) {
             qDebug() << "[ERROR] bolusManager is null!";
             return;
         }
-    
+
         double recommendedDose = bolusManager->computeRecommendedDose(bg, carbs);
         qDebug() << "[Bolus Input] Recommended dose:" << recommendedDose << "units";
         dataLogger->logEvent("BolusCalc", "Recommended bolus: " + std::to_string(recommendedDose));
-    
+
         showBolusConfirmationPage(recommendedDose);
-    });    
+    });
 
     connect(backButton, &QPushButton::clicked, this, &MergedMainWindow::showHomePage);
 
-    // --- Final setup ---
     bolusInputPage->setLayout(mainLayout);
     stackedWidget->addWidget(bolusInputPage);
 }
@@ -598,8 +633,54 @@ void MergedMainWindow::showExtendedBolusConfigPage(double dose)
     stackedWidget->setCurrentWidget(extendedBolusPage);
 }
 
+void MergedMainWindow::setupBasalControlPage()
+{
+    basalControlPage = new QWidget(this);
+    QVBoxLayout* layout = new QVBoxLayout(basalControlPage);
+
+    QFormLayout* formLayout = new QFormLayout();
+    QDoubleSpinBox* basalRateSpin = new QDoubleSpinBox(basalControlPage);
+    basalRateSpin->setRange(0.1, 10.0);
+    basalRateSpin->setDecimals(2);
+    basalRateSpin->setSingleStep(0.1);
+    basalRateSpin->setValue(1.0);
+    formLayout->addRow("Set Basal Rate (U/hr):", basalRateSpin);
+    layout->addLayout(formLayout);
+
+    QHBoxLayout* btnLayout = new QHBoxLayout();
+    QPushButton* startBasalBtn = new QPushButton("Start Basal", basalControlPage);
+    QPushButton* backBtn = new QPushButton("Back", basalControlPage);
+    btnLayout->addWidget(startBasalBtn);
+    btnLayout->addWidget(backBtn);
+    layout->addLayout(btnLayout);
+
+    connect(startBasalBtn, &QPushButton::clicked, [=]() {
+        double rate = basalRateSpin->value();
+        if (insulinDeliveryMgr) {
+            insulinDeliveryMgr->startBasalDelivery(rate);
+            QMessageBox::information(basalControlPage, "Basal Control", QString("Basal started at %1 U/hr.").arg(rate));
+            dataLogger->logEvent("BasalStart", "Basal started at " + std::to_string(rate) + " U/hr");
+            showHomePage();  // optional: auto return
+        }
+    });    
+
+    connect(backBtn, &QPushButton::clicked, this, &MergedMainWindow::showOptionsPage);
+
+    basalControlPage->setLayout(layout);
+    stackedWidget->addWidget(basalControlPage);
+}
+
 //--------------
 void MergedMainWindow::showHomePage() { stackedWidget->setCurrentWidget(homePage); }
+void MergedMainWindow::showHistoryPage()
+{
+    if (!historyPage)
+        setupHistoryPage();
+    else
+        updateHistoryList();
+
+    stackedWidget->setCurrentWidget(historyPage);
+}
 void MergedMainWindow::showOptionsPage() { stackedWidget->setCurrentWidget(optionsPage); }
 void MergedMainWindow::showPersonalProfilesPage()
 {
@@ -640,6 +721,15 @@ void MergedMainWindow::showViewProfilePage(Profile* profile)
     stackedWidget->setCurrentWidget(viewProfilePage);
 }
 void MergedMainWindow::showBolusPage() {
-    setupBolusInputPage();
+    setupBolusInputPage();  // One-time setup
+    if (bgLineEdit && cgmInterface)
+        bgLineEdit->setText(QString::number(cgmInterface->getCurrentBG()));
     stackedWidget->setCurrentWidget(bolusInputPage);
 }
+
+void MergedMainWindow::showBasalControlPage() {
+    if (!basalControlPage)
+        setupBasalControlPage();
+    stackedWidget->setCurrentWidget(basalControlPage);
+}
+

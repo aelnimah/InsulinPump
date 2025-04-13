@@ -163,8 +163,12 @@ void InsulinDeliveryManager::startBasalDelivery(double rate) {
     }
 
     if (basalRunning) {
+        if (std::abs(currentBasalRate - rate) < 0.0001) {
+            // Rate is the same, no need to log or restart
+            return;
+        }
         std::cout << "[Warning] Basal already running at " << currentBasalRate << " U/hr. Updating...\n";
-    }
+    }    
 
     currentBasalRate = rate;
     basalRunning = true;

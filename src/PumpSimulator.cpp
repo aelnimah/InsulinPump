@@ -35,6 +35,12 @@ void PumpSimulator::stopSimulation() {
 void PumpSimulator::updateSimulationState() {
     if (!isRunning) return;
 
+    // Wait until active profile is set
+    if (!profileManager || !profileManager->getActiveProfile()) {
+        std::cout << "[PumpSimulator] Waiting for active profile...\n";
+        return;
+    }
+
     int currentSimTime = getCurrentSimTime();
     std::cout << "\n[Time = " << currentSimTime << " min]\n";
 

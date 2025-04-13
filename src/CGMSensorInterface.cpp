@@ -3,9 +3,9 @@
 
 #include <algorithm>
 
-CGMSensorInterface::CGMSensorInterface() : profile(nullptr), currentBG(0.0) {}
+CGMSensorInterface::CGMSensorInterface() : profile(nullptr), currentBG(6.0) {}
 CGMSensorInterface::~CGMSensorInterface() {}
 
 double CGMSensorInterface::getCurrentBG() const { return currentBG; }
-void CGMSensorInterface::simulateNextReading() { currentBG = std::max(0.5, currentBG - 0.5); }
+void CGMSensorInterface::simulateNextReading() { currentBG = std::max(0.5, currentBG - 0.05); }
 void CGMSensorInterface::setBG(double newValue) { currentBG = newValue; }

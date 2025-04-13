@@ -9,7 +9,6 @@
 
 #include "PumpSimulator.h"
 
-
 class QTimer;
 class QLabel;
 class QWidget;
@@ -47,6 +46,11 @@ private:
     void setupOptionsPage();
     void showOptionsPage();
 
+    // History Page
+    void setupHistoryPage();
+    void updateHistoryList();
+    void showHistoryPage();
+
     // CRUD
     void setupProfilesPage();
     void showPersonalProfilesPage();
@@ -61,6 +65,10 @@ private:
     void showBolusPage();
     void showBolusConfirmationPage(double dose);
     void showExtendedBolusConfigPage(double dose);
+
+    // Basal
+    void setupBasalControlPage();
+    void showBasalControlPage();
 
     DataLogger* dataLogger = nullptr;
 
@@ -89,15 +97,21 @@ private:
     QWidget* homePage = nullptr;
     QWidget* optionsPage = nullptr;
 
+    QWidget* historyPage = nullptr;
+    QListWidget* historyList = nullptr;
+
     QWidget* profilesPage = nullptr;
     QListWidget* profileList = nullptr;
     QWidget* addProfilePage = nullptr;
     QWidget* viewProfilePage = nullptr;
 
     QWidget* bolusInputPage = nullptr;
+    QLineEdit* bgLineEdit = nullptr;
     QWidget* bolusConfirmationPage = nullptr;
     QLineEdit* bolusDoseEdit = nullptr;
     QWidget* extendedBolusPage = nullptr;
+
+    QWidget* basalControlPage = nullptr;
 };
 
 #endif // MERGEDMAINWINDOW_H
