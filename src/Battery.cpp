@@ -16,3 +16,7 @@ int Battery::getLevel() const {
 void Battery::setLevel(int lvl) {
     level = std::max(0, std::min(100, lvl));
 }
+
+void Battery::drain(int amount) {
+    setLevel(level - amount);
+}

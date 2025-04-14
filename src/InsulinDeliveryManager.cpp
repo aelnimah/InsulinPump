@@ -172,7 +172,7 @@ void InsulinDeliveryManager::startBasalDelivery(double rate) {
 
     currentBasalRate = rate;
     basalRunning = true;
-    std::cout << "[Basal] Started at " << rate << " U/hr.\n";
+    std::cout << "[Basal] Rate: " << rate << " U/hr.\n";
 }
 
 void InsulinDeliveryManager::stopBasalDelivery() {

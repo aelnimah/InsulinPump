@@ -44,6 +44,10 @@ void PumpSimulator::updateSimulationState() {
     int currentSimTime = getCurrentSimTime();
     std::cout << "\n[Time = " << currentSimTime << " min]\n";
 
+    if (battery) {
+        battery->drain(1);
+    }
+
     if (deliveryManager)
         deliveryManager->onTick(1.0);
 

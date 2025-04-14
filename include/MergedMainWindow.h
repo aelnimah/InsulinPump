@@ -46,6 +46,11 @@ private:
     void setupOptionsPage();
     void showOptionsPage();
 
+    // Pump 
+    void setupPumpPage();
+    void showPumpPage();
+    void updatePumpStatusLabels();
+
     // History Page
     void setupHistoryPage();
     void updateHistoryList();
@@ -94,11 +99,18 @@ private:
     QLabel* iobLabel = nullptr;
     QLabel* bgLabel = nullptr;
 
+    QLabel* batteryLabel = nullptr;
+    QLabel* cartridgeLabel = nullptr;
+
     QWidget* homePage = nullptr;
     QWidget* optionsPage = nullptr;
 
     QWidget* historyPage = nullptr;
     QListWidget* historyList = nullptr;
+
+    QWidget* pumpPage = nullptr;
+    QLabel* batteryStatusLabel = nullptr;
+    QLabel* cartridgeStatusLabel = nullptr;
 
     QWidget* profilesPage = nullptr;
     QListWidget* profileList = nullptr;

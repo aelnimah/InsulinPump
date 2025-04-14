@@ -114,10 +114,17 @@ void MergedMainWindow::onSimulationTick()
 
     // Refresh labels
     if (iobLabel)
-    iobLabel->setText("IOB: " + QString::number(insulinDeliveryMgr->getInsulinOnBoard(), 'f', 2) + " U");
+        iobLabel->setText("IOB: " + QString::number(insulinDeliveryMgr->getInsulinOnBoard(), 'f', 2) + " U");
 
     if (bgLabel)
-    bgLabel->setText("BG: " + QString::number(cgmInterface->getCurrentBG(), 'f', 1) + " mmol/L");
+        bgLabel->setText("BG: " + QString::number(cgmInterface->getCurrentBG(), 'f', 1) + " mmol/L");
+
+    if (batteryLabel && pumpSimulator->getBattery())
+        batteryLabel->setText("Battery: " + QString::number(pumpSimulator->getBattery()->getLevel()) + "%");
+
+    if (cartridgeLabel && pumpSimulator->getCartridge())
+        cartridgeLabel->setText("Cartridge: " + QString::number(pumpSimulator->getCartridge()->getCurrentVolume()) + " IU");
+
 }
 
 void MergedMainWindow::setupHomePage()
@@ -125,26 +132,32 @@ void MergedMainWindow::setupHomePage()
     homePage = new QWidget(this);
     QVBoxLayout* mainLayout = new QVBoxLayout(homePage);
 
-    // --- Top-left IOB/BG layout ---
-    QVBoxLayout* infoLayout = new QVBoxLayout();
-    iobLabel = new QLabel("IOB: " + QString::number(insulinDeliveryMgr->getInsulinOnBoard()) + " U", homePage);
-    bgLabel = new QLabel("BG: " + QString::number(cgmInterface->getCurrentBG()) + " mmol/L", homePage);
-    infoLayout->addWidget(iobLabel);
-    infoLayout->addWidget(bgLabel);
-    infoLayout->addStretch(); // Pushes labels up
+    // Top layout split into left and right sections
+    QHBoxLayout* topLayout = new QHBoxLayout();
 
-    QHBoxLayout* topRowLayout = new QHBoxLayout();
-    topRowLayout->addLayout(infoLayout);
-    topRowLayout->addStretch(); // Pushes everything to the left
+    // --- LEFT (IOB & BG)
+    QVBoxLayout* leftTopLayout = new QVBoxLayout();
+    iobLabel = new QLabel("IOB: " + QString::number(insulinDeliveryMgr->getInsulinOnBoard(), 'f', 2) + " U", homePage);
+    bgLabel = new QLabel("BG: " + QString::number(cgmInterface->getCurrentBG(), 'f', 2) + " mmol/L", homePage);
 
-    mainLayout->addLayout(topRowLayout);
+    leftTopLayout->addWidget(iobLabel);
+    leftTopLayout->addWidget(bgLabel);
 
-    // --- Time label ---
-    simTimeLabel->setAlignment(Qt::AlignCenter);
-    simTimeLabel->setStyleSheet("font-weight: bold; font-size: 24px;");
-    mainLayout->addWidget(simTimeLabel);
+    // --- RIGHT (Battery & Cartridge)
+    QVBoxLayout* rightTopLayout = new QVBoxLayout();
+    batteryLabel = new QLabel("Battery: " + QString::number(pumpSimulator->getBattery()->getLevel()) + "%", homePage);
+    cartridgeLabel = new QLabel("Cartridge: " + QString::number(pumpSimulator->getCartridge()->getCurrentVolume(), 'f', 1) + " IU", homePage);
+    rightTopLayout->addWidget(batteryLabel);
+    rightTopLayout->addWidget(cartridgeLabel);
+    rightTopLayout->setAlignment(Qt::AlignRight);
+ 
+    topLayout->addLayout(leftTopLayout);
+    topLayout->addStretch(); // push right side all the way over
+    topLayout->addLayout(rightTopLayout);
 
-    // --- Buttons ---
+    mainLayout->addLayout(topLayout);
+
+    // Buttons
     QPushButton* optionsBtn = new QPushButton("Options", homePage);
     QPushButton* bolusBtn = new QPushButton("Bolus", homePage);
     QPushButton* historyBtn = new QPushButton("History", homePage);
@@ -158,6 +171,55 @@ void MergedMainWindow::setupHomePage()
     connect(historyBtn, &QPushButton::clicked, this, &MergedMainWindow::showHistoryPage);
 
     homePage->setLayout(mainLayout);
+}
+
+void MergedMainWindow::setupPumpPage() {
+    pumpPage = new QWidget(this);
+    QVBoxLayout* layout = new QVBoxLayout(pumpPage);
+
+    // --- Status Labels ---
+    batteryStatusLabel = new QLabel("Battery: --%", pumpPage);
+    cartridgeStatusLabel = new QLabel("Cartridge: -- IU", pumpPage);
+    layout->addWidget(batteryStatusLabel);
+    layout->addWidget(cartridgeStatusLabel);
+
+    // --- Action Buttons ---
+    QPushButton* chargeBtn = new QPushButton("Charge Battery", pumpPage);
+    QPushButton* refillBtn = new QPushButton("Refill Insulin", pumpPage);
+    QPushButton* backBtn = new QPushButton("Back", pumpPage);
+
+    layout->addWidget(chargeBtn);
+    layout->addWidget(refillBtn);
+    layout->addWidget(backBtn);
+
+    connect(chargeBtn, &QPushButton::clicked, [=]() {
+        Battery* battery = pumpSimulator->getBattery();
+        if (battery) battery->setLevel(100);
+        updatePumpStatusLabels();
+    });
+
+    connect(refillBtn, &QPushButton::clicked, [=]() {
+        Cartridge* cart = pumpSimulator->getCartridge();
+        if (cart) cart->refill();  // Assumes you have a refill() method
+        updatePumpStatusLabels();
+    });
+
+    connect(backBtn, &QPushButton::clicked, this, &MergedMainWindow::showOptionsPage);
+
+    pumpPage->setLayout(layout);
+    stackedWidget->addWidget(pumpPage);
+}
+
+void MergedMainWindow::updatePumpStatusLabels() {
+    if (batteryStatusLabel && pumpSimulator->getBattery()) {
+        batteryStatusLabel->setText("Battery: " +
+            QString::number(pumpSimulator->getBattery()->getLevel()) + "%");
+    }
+
+    if (cartridgeStatusLabel && pumpSimulator->getCartridge()) {
+        cartridgeStatusLabel->setText("Cartridge: " +
+            QString::number(pumpSimulator->getCartridge()->getCurrentVolume(), 'f', 1) + " IU");
+    }
 }
 
 void MergedMainWindow::setupHistoryPage()
@@ -210,6 +272,10 @@ void MergedMainWindow::setupOptionsPage()
     QPushButton* homeButton = new QPushButton("Home", optionsPage);
     layout->addWidget(homeButton);
     connect(homeButton, &QPushButton::clicked, this, &MergedMainWindow::showHomePage);
+
+    QPushButton* pumpButton = new QPushButton("Pump", optionsPage);
+    layout->addWidget(pumpButton);
+    connect(pumpButton, &QPushButton::clicked, this, &MergedMainWindow::showPumpPage);
 
     optionsPage->setLayout(layout);
 }
@@ -672,6 +738,11 @@ void MergedMainWindow::setupBasalControlPage()
 
 //--------------
 void MergedMainWindow::showHomePage() { stackedWidget->setCurrentWidget(homePage); }
+void MergedMainWindow::showPumpPage() {
+    if (!pumpPage) setupPumpPage();
+    updatePumpStatusLabels();
+    stackedWidget->setCurrentWidget(pumpPage);
+}
 void MergedMainWindow::showHistoryPage()
 {
     if (!historyPage)

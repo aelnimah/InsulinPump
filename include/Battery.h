@@ -26,6 +26,9 @@ public:
 
     int getLevel() const;
     void setLevel(int lvl);
+
+    void drain(int amount);
+
 };
 
 #endif // BATTERY_H
