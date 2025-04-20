@@ -42,6 +42,8 @@ void PumpSimulator::updateSimulationState() {
     }
 
     int currentSimTime = getCurrentSimTime();
+    if (cgmSensor)
+        cgmSensor->setSimulatedTime(currentSimTime);
     std::cout << "\n[Time = " << currentSimTime << " min]\n";
 
     if (battery) {

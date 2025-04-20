@@ -6,6 +6,9 @@
 #include <iostream>
 #include <sstream>
 
+#include <QMessageBox>
+#include <QApplication>
+
 AlertManager::AlertManager() : profile(nullptr) {}
 
 AlertManager::~AlertManager() {
@@ -19,7 +22,7 @@ AlertManager::~AlertManager() {
 void AlertManager::checkBattery(Battery* batt) {
     if (!batt) return;
     int level = batt->getLevel();
-    if (level < 20) {
+    if (level < 21) {
         Alarm* alarm = new Alarm();
         alarm->setAlarmId("BAT_LOW");
         std::ostringstream msg;
@@ -34,7 +37,7 @@ void AlertManager::checkBattery(Battery* batt) {
 void AlertManager::checkCartridge(Cartridge* cart) {
     if (!cart) return;
     double volume = cart->getCurrentVolume();
-    if (volume < 1.0) {
+    if (volume < 20.0) {
         Alarm* alarm = new Alarm();
         alarm->setAlarmId("CARTRIDGE_EMPTY");
         std::ostringstream msg;
@@ -46,17 +49,25 @@ void AlertManager::checkCartridge(Cartridge* cart) {
 }
 
 // Only raise a new alarm if it's not already active
+#include <QMessageBox>
+#include <QApplication> // for QWidget pointer to parent window
+
 void AlertManager::raiseAlarm(Alarm* alarm) {
-    for (Alarm* a : activeAlarms) {
+    // Avoid duplicates
+    for (auto a : activeAlarms) {
         if (a->getAlarmId() == alarm->getAlarmId() && a->getIsActive()) {
-            std::cout << "[AlertManager] Alarm " << alarm->getAlarmId() << " already active.\n";
-            delete alarm;
             return;
         }
     }
+
     activeAlarms.push_back(alarm);
-    std::cout << "[AlertManager] Alarm raised: " << alarm->getMessage() << "\n";
+    std::cout << "[Alert] Raised: " << alarm->getAlarmId() << " - " << alarm->getMessage() << "\n";
+
+    // === SHOW POPUP ===
+    QString msg = QString::fromStdString(alarm->getMessage());
+    QMessageBox::warning(nullptr, "Pump Alert", msg);  // nullptr means no parent (system modal)
 }
+
 
 // Acknowledge and deactivate an alarm by ID
 void AlertManager::clearAlarm(const std::string &alarmId) {

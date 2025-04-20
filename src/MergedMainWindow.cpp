@@ -47,6 +47,8 @@ MergedMainWindow::MergedMainWindow(PumpSimulator* simulator, ProfileManager* mgr
 
         BolusCalculator* calc = pumpSimulator->getBolusCalculator();
         bolusManager = new BolusManager(profileManager, calc, insulinDeliveryMgr, cgmInterface);
+
+        cgmInterface->setDeliveryManager(insulinDeliveryMgr);
         
     }
 
@@ -577,6 +579,7 @@ void MergedMainWindow::setupBolusInputPage()
         qDebug() << "[Bolus Input] Recommended dose:" << recommendedDose << "units";
         dataLogger->logEvent("BolusCalc", "Recommended bolus: " + std::to_string(recommendedDose));
 
+        cgmInterface->addCarbs(carbs);
         showBolusConfirmationPage(recommendedDose);
     });
 
