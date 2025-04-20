@@ -22,6 +22,9 @@
 #include <QFormLayout>
 #include <QDoubleSpinBox>
 
+#include <QtCharts/QValueAxis>
+QT_CHARTS_USE_NAMESPACE
+
 
 
 MergedMainWindow::MergedMainWindow(PumpSimulator* simulator, ProfileManager* mgr, QWidget* parent)
@@ -125,6 +128,16 @@ void MergedMainWindow::onSimulationTick()
     if (cartridgeLabel && pumpSimulator->getCartridge())
         cartridgeLabel->setText("Cartridge: " + QString::number(pumpSimulator->getCartridge()->getCurrentVolume()) + " IU");
 
+    if (bgSeries && pumpSimulator) {
+        int time = pumpSimulator->getCurrentSimTime();
+        double bg = cgmInterface->getCurrentBG();
+        bgSeries->append(time, bg);
+    
+        QChart* chart = chartView->chart();
+        QValueAxis* axisX = static_cast<QValueAxis*>(chart->axisX());
+        if (axisX && time > 30)
+            axisX->setRange(time - 30, time); // show last 30 minutes
+    }             
 }
 
 void MergedMainWindow::setupHomePage()
@@ -152,7 +165,7 @@ void MergedMainWindow::setupHomePage()
     rightTopLayout->setAlignment(Qt::AlignRight);
  
     topLayout->addLayout(leftTopLayout);
-    topLayout->addStretch(); // push right side all the way over
+    topLayout->addStretch();
     topLayout->addLayout(rightTopLayout);
 
     mainLayout->addLayout(topLayout);
@@ -160,14 +173,17 @@ void MergedMainWindow::setupHomePage()
     // Buttons
     QPushButton* optionsBtn = new QPushButton("Options", homePage);
     QPushButton* bolusBtn = new QPushButton("Bolus", homePage);
+    QPushButton* bgGraphBtn = new QPushButton("View BG Graph", homePage);
     QPushButton* historyBtn = new QPushButton("History", homePage);
 
     mainLayout->addWidget(optionsBtn);
     mainLayout->addWidget(bolusBtn);
+    mainLayout->addWidget(bgGraphBtn);
     mainLayout->addWidget(historyBtn);
 
     connect(optionsBtn, &QPushButton::clicked, this, &MergedMainWindow::showOptionsPage);
     connect(bolusBtn, &QPushButton::clicked, this, &MergedMainWindow::showBolusPage);
+    connect(bgGraphBtn, &QPushButton::clicked, this, &MergedMainWindow::showBGGraphPage);
     connect(historyBtn, &QPushButton::clicked, this, &MergedMainWindow::showHistoryPage);
 
     homePage->setLayout(mainLayout);
@@ -736,6 +752,45 @@ void MergedMainWindow::setupBasalControlPage()
     stackedWidget->addWidget(basalControlPage);
 }
 
+void MergedMainWindow::setupBGGraphPage() {
+    bgGraphPage = new QWidget(this);
+    QVBoxLayout* layout = new QVBoxLayout(bgGraphPage);
+
+    bgSeries = new QLineSeries();
+    bgSeries->setName("BG Level");
+
+    QChart* chart = new QChart();
+    chart->addSeries(bgSeries);
+    chart->setTitle("Blood Glucose Over Time");
+
+    QValueAxis* axisX = new QValueAxis();
+    axisX->setTitleText("Time (min)");
+    axisX->setLabelFormat("%d");
+    axisX->setRange(0, 60); 
+
+    QValueAxis* axisY = new QValueAxis();
+    axisY->setTitleText("BG (mmol/L)");
+    axisY->setLabelFormat("%.1f");
+    axisY->setRange(3.0, 10.0); 
+
+    chart->addAxis(axisX, Qt::AlignBottom);
+    chart->addAxis(axisY, Qt::AlignLeft);
+
+    bgSeries->attachAxis(axisX);
+    bgSeries->attachAxis(axisY);
+
+    chartView = new QChartView(chart);
+    chartView->setRenderHint(QPainter::Antialiasing);
+    layout->addWidget(chartView);
+
+    QPushButton* backBtn = new QPushButton("Back", bgGraphPage);
+    layout->addWidget(backBtn);
+    connect(backBtn, &QPushButton::clicked, this, &MergedMainWindow::showHomePage);
+
+    bgGraphPage->setLayout(layout);
+    stackedWidget->addWidget(bgGraphPage);
+}
+
 //--------------
 void MergedMainWindow::showHomePage() { stackedWidget->setCurrentWidget(homePage); }
 void MergedMainWindow::showPumpPage() {
@@ -804,3 +859,8 @@ void MergedMainWindow::showBasalControlPage() {
     stackedWidget->setCurrentWidget(basalControlPage);
 }
 
+void MergedMainWindow::showBGGraphPage() {
+    if (!bgGraphPage)
+        setupBGGraphPage();
+    stackedWidget->setCurrentWidget(bgGraphPage);
+}

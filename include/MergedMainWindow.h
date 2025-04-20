@@ -7,6 +7,11 @@
 #include <QMessageBox>
 #include <QDebug>
 
+#include <QtCharts/QChartView>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QChart>
+QT_CHARTS_USE_NAMESPACE
+
 #include "PumpSimulator.h"
 
 class QTimer;
@@ -45,6 +50,10 @@ private:
     // Options Page
     void setupOptionsPage();
     void showOptionsPage();
+
+    // BG Graph Page
+    void setupBGGraphPage();
+    void showBGGraphPage();
 
     // Pump 
     void setupPumpPage();
@@ -124,6 +133,10 @@ private:
     QWidget* extendedBolusPage = nullptr;
 
     QWidget* basalControlPage = nullptr;
+
+    QWidget* bgGraphPage = nullptr;
+    QChartView* chartView = nullptr;
+    QLineSeries* bgSeries = nullptr;
 };
 
 #endif // MERGEDMAINWINDOW_H
